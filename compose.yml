@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # Serviço do Banco de Dados MySQL
+  db:
+    image: mysql:8.0
+    # Mapeia a porta do host (3306) para a porta do contêiner (3306)
+    ports:
+      - "3306:3306"
+    environment:
+      # Variáveis de ambiente para configurar o MySQL (MUITO IMPORTANTE)
+      MYSQL_ROOT_PASSWORD: root_password # Use uma senha forte em produção
+      MYSQL_DATABASE: nestjs_db
+      MYSQL_USER: nestjs_user
+      MYSQL_PASSWORD: nestjs_password
+    # Define um volume persistente para que os dados do DB não se percam
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # Serviço da Aplicação NestJS
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Mapeia a porta do host (3000) para a porta do contêiner (3000)
+    ports:
+      - "3000:3000"
+    # Monta um volume para o hot-reload durante o desenvolvimento (opcional)
+    # volumes:
+    #   - .:/usr/src/app
+    #   - /usr/src/app/node_modules
+    env_file:
+      # Caminho para o seu arquivo .env com as variáveis do TypeORM/MySQL
+      - .env
+    # Depende do serviço 'db' estar pronto
+    depends_on:
+      - db
+    volumes:
+      # 1. Mapeia todo o diretório do projeto local (host) para o contêiner
+      - .:/usr/src/app
+
+      # 2. Volume Anônimo/Exclusão: Impede que o 'node_modules' do host
+      #    sobrescreva o 'node_modules' instalado no contêiner
+      - /usr/src/app/node_modules
+    # No docker-compose.yml, dentro do serviço 'app':
+    command: /bin/sh -c "sleep 5 && npm run start:dev"
+
+# Definição dos volumes
+volumes:
+  mysql_data:
