@@ -3,6 +3,7 @@ import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -11,16 +12,39 @@ export class UserService {
     private repository: Repository<User>,
   ) {}
 
-  async findAll(): Promise<User[]> {
-    return this.repository.find();
+  async findAll(): Promise<Omit<User, 'password'>[]> {
+    return this.repository.find({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        created_at: true,
+      },
+    });
   }
 
   async createUser(user: CreateUserDto): Promise<User> {
-    return this.repository.save(user);
+    const hashPassword = await bcrypt.hash(user.password, 10);
+
+    return this.repository.save({
+      ...user,
+      password: hashPassword,
+    });
   }
 
-  async updateUser(user: UpdateUserDto): Promise<User> {
-    return this.repository.save(user);
+  async updateUser(
+    id: number,
+    user: UpdateUserDto,
+  ): Promise<Omit<User, 'password'> | null> {
+    const updateResult = await this.repository.update(id, user);
+    if (updateResult.affected === 0) {
+      throw new NotFoundException(`Usuário com ID ${id} não encontrado.`);
+    }
+
+    return this.repository.findOne({
+      where: { id },
+      select: { id: true, name: true, email: true, created_at: true },
+    });
   }
 
   async deleteUser(userId: string): Promise<any> {

@@ -8,7 +8,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Instala as dependências (com o cache do yarn ou npm)
-RUN npm install
+RUN npm ci
 
 # Copia o restante dos arquivos da aplicação
 COPY . .
