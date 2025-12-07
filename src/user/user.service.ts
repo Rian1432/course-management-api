@@ -47,13 +47,13 @@ export class UserService {
     });
   }
 
-  async deleteUser(userId: string): Promise<any> {
+  async deleteUser(userId: string): Promise<object | NotFoundException> {
     const deleteResult = await this.repository.delete(userId);
 
     if (deleteResult.affected === 0) {
       throw new NotFoundException(404);
     }
 
-    return deleteResult;
+    return {};
   }
 }

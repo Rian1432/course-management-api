@@ -3,10 +3,12 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Post,
   Put,
+  UseFilters,
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
@@ -16,11 +18,11 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+@UseGuards(AuthGuard)
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @UseGuards(AuthGuard)
   @Get()
   findAll(): Promise<Omit<User, 'password'>[]> {
     return this.userService.findAll();
@@ -31,7 +33,6 @@ export class UserController {
     return this.userService.createUser(data);
   }
 
-  @UseGuards(AuthGuard)
   @Put(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -40,9 +41,8 @@ export class UserController {
     return this.userService.updateUser(id, data);
   }
 
-  @UseGuards(AuthGuard)
   @Delete(':id')
-  deleteUser(@Param('id') id: string): Promise<any> {
+  deleteUser(@Param('id') id: string): Promise<object | NotFoundException> {
     return this.userService.deleteUser(id);
   }
 }
