@@ -4,12 +4,16 @@ import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { Role } from '../role/role.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @Inject('USER_REPOSITORY')
     private repository: Repository<User>,
+
+    @Inject('ROLE_REPOSITORY')
+    private roleRepository: Repository<Role>,
   ) {}
 
   async findAll(): Promise<Omit<User, 'password'>[]> {
@@ -18,32 +22,71 @@ export class UserService {
         id: true,
         name: true,
         email: true,
+        role: true,
         created_at: true,
       },
     });
   }
 
   async createUser(user: CreateUserDto): Promise<User> {
+    const role = await this.roleRepository.findOne({
+      where: { id: user.roleId },
+    });
+
+    if (!role) {
+      throw new NotFoundException('Role não encontrada');
+    }
+
     const hashPassword = await bcrypt.hash(user.password, 10);
 
     return this.repository.save({
       ...user,
       password: hashPassword,
+      role: role,
     });
   }
 
   async updateUser(
     id: number,
-    user: UpdateUserDto,
+    data: UpdateUserDto,
   ): Promise<Omit<User, 'password'> | null> {
-    const updateResult = await this.repository.update(id, user);
-    if (updateResult.affected === 0) {
-      throw new NotFoundException(`Usuário com ID ${id} não encontrado.`);
+    const currentUser = await this.repository.findOne({
+      where: { id },
+      relations: ['role'],
+    });
+
+    if (!currentUser) {
+      throw new NotFoundException('Este usuário não existe');
     }
+
+    if (data.roleId) {
+      const role = await this.roleRepository.findOne({
+        where: { id: data.roleId },
+      });
+      if (!role) throw new NotFoundException('Role não encontrada');
+
+      currentUser.role = role;
+    }
+
+    if (data.name) currentUser.name = data.name;
+    if (data.email) currentUser.email = data.email;
+
+    if (data.password) {
+      currentUser.password = await bcrypt.hash(data.password, 10);
+    }
+
+    await this.repository.save(currentUser);
 
     return this.repository.findOne({
       where: { id },
-      select: { id: true, name: true, email: true, created_at: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        created_at: true,
+        updated_at: true,
+        role: true,
+      },
     });
   }
 

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import {
   IsString,
   IsAlpha,
@@ -21,4 +20,7 @@ export class CreateUserDto {
   @IsAlpha()
   @IsNotEmpty()
   password: string;
+
+  @IsNotEmpty()
+  roleId: number;
 }
