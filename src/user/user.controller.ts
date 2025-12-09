@@ -8,8 +8,9 @@ import {
   ParseIntPipe,
   Post,
   Put,
-  UseFilters,
+  Query,
   UseGuards,
+  UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import { UserService } from './user.service';
@@ -17,6 +18,7 @@ import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @UseGuards(AuthGuard)
 @Controller('user')
@@ -24,8 +26,9 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  findAll(): Promise<Omit<User, 'password'>[]> {
-    return this.userService.findAll();
+  @UsePipes(new ValidationPipe({ transform: true }))
+  findAll(@Query() pagination: PaginationDto) {
+    return this.userService.findAll(pagination);
   }
 
   @Post()

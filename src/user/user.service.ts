@@ -1,10 +1,12 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Like, Repository } from 'typeorm';
 import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 import { Role } from '../role/role.entity';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { DEFAULT_PAGE_SIZE } from '../utils/contants';
 
 @Injectable()
 export class UserService {
@@ -16,8 +18,18 @@ export class UserService {
     private roleRepository: Repository<Role>,
   ) {}
 
-  async findAll(): Promise<Omit<User, 'password'>[]> {
-    return this.repository.find({
+  async findAll(pagination: PaginationDto) {
+    const { limit, offset, search } = pagination;
+    const whereCondition: FindOptionsWhere<User> = {};
+
+    if (search) {
+      whereCondition.name = Like(`%${search}%`);
+    }
+
+    const [items, total] = await this.repository.findAndCount({
+      where: whereCondition,
+      take: limit,
+      skip: offset,
       select: {
         id: true,
         name: true,
@@ -26,6 +38,13 @@ export class UserService {
         created_at: true,
       },
     });
+
+    return {
+      items,
+      total,
+      limit,
+      offset,
+    };
   }
 
   async createUser(user: CreateUserDto): Promise<User> {
