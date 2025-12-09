@@ -12,7 +12,7 @@ export const databaseProviders = [
         password: process.env.DB_PASSWORD || 'nestjs_password',
         database: process.env.DB_NAME || 'nestjs_db',
         entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-        synchronize: true,
+        synchronize: false,
       });
       return dataSource.initialize();
     },

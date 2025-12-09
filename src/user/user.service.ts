@@ -6,7 +6,6 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 import { Role } from '../role/role.entity';
 import { PaginationDto } from '../common/dto/pagination.dto';
-import { DEFAULT_PAGE_SIZE } from '../utils/contants';
 
 @Injectable()
 export class UserService {
@@ -103,7 +102,6 @@ export class UserService {
         name: true,
         email: true,
         created_at: true,
-        updated_at: true,
         role: true,
       },
     });
